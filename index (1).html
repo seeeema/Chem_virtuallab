@@ -1,0 +1,2579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheminformatics Studio | Virtual Laboratory</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- 3Dmol.js for Interactive 3D Molecular Structures -->
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <!-- Chart.js for Multi-Molecule Comparison -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF & AutoTable for Real PDF Report Downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        code, .mono {
+            font-family: var(--font-mono);
+        }
+
+        /* Hero Banner from App_fixed.py */
+        .hero-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0f766e 100%);
+            color: #ffffff;
+            padding: 2.2rem 2.5rem;
+            border-radius: 18px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+            margin-bottom: 1.75rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(20, 184, 166, 0.2);
+            color: #5eead4;
+            border: 1px solid rgba(94, 234, 212, 0.35);
+            padding: 0.3rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-title {
+            font-size: 2.15rem;
+            font-weight: 800;
+            margin: 0 0 0.45rem 0;
+            letter-spacing: -0.02em;
+            color: #f8fafc;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: #cbd5e1;
+            margin: 0 0 1rem 0;
+            font-weight: 400;
+            max-width: 780px;
+            line-height: 1.55;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.84rem;
+            color: #e2e8f0;
+        }
+
+        .hero-meta-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.4rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(90deg, #f8fafc 0%, #f0fdfa 100%);
+            border-left: 5px solid #0d9488;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .page-header h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.93rem;
+            color: #475569;
+            margin: 0;
+        }
+
+        /* Lab Cards */
+        .lab-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1.25rem 1.4rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+            margin-bottom: 1.1rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .lab-card:hover {
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .lab-card-title {
+            font-size: 1.04rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Custom Metric Tile */
+        .metric-tile {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid #0d9488;
+            border-radius: 12px;
+            padding: 0.95rem 1.1rem;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            text-align: left;
+            height: 100%;
+        }
+
+        .metric-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #64748b;
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0f172a;
+            font-family: var(--font-mono);
+        }
+
+        .metric-sub {
+            font-size: 0.74rem;
+            color: #0f766e;
+            margin-top: 0.2rem;
+        }
+
+        /* Author Showcase Card */
+        .author-card {
+            background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
+            border: 1px solid #99f6e4;
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            margin-top: 1.25rem;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.07);
+        }
+
+        .author-name {
+            font-size: 1.18rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0.2rem 0;
+        }
+
+        .author-role {
+            font-size: 0.85rem;
+            color: #0f766e;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Status Pill */
+        .smiles-pill {
+            font-family: var(--font-mono);
+            background: #f1f5f9;
+            color: #0f766e;
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        /* Buttons */
+        .btn-teal {
+            border-radius: 10px;
+            font-weight: 600;
+            border: 1px solid #0d9488;
+            background-color: #0d9488;
+            color: white;
+            padding: 0.5rem 1.1rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn-teal:hover {
+            background-color: #0f766e;
+            border-color: #0f766e;
+        }
+
+        .btn-dark {
+            border-radius: 10px;
+            font-weight: 600;
+            background-color: #0f172a;
+            color: white;
+            border: 1px solid #0f172a;
+            padding: 0.55rem 1.1rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn-dark:hover {
+            background-color: #1e293b;
+            color: #5eead4;
+        }
+
+        /* Sidebar Radio Styling */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #334155;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .nav-item.active {
+            background-color: #f0fdfa;
+            color: #0f766e;
+            font-weight: 700;
+            border: 1px solid #99f6e4;
+        }
+
+        .radio-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            border: 2px solid #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nav-item.active .radio-dot {
+            border-color: #0d9488;
+        }
+
+        .nav-item.active .radio-dot::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background-color: #0d9488;
+        }
+
+        /* Custom Footer */
+        .custom-footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-top: 2.5rem;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.86rem;
+        }
+
+        /* 3D Viewer Wrapper */
+        .viewer-3d-box {
+            position: relative;
+            width: 100%;
+            height: 460px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row">
+
+    <!-- MOBILE HEADER -->
+    <div class="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <span class="text-xl">⚗️</span>
+            <span class="font-bold text-sm">Cheminformatics Studio</span>
+        </div>
+        <button id="mobileMenuBtn" class="px-3 py-1.5 rounded-lg bg-teal-600 text-xs font-semibold">
+            ☰ Menu
+        </button>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION & WORKSPACE PANEL -->
+    <aside id="sidebar" class="w-full md:w-80 bg-slate-100 border-r border-slate-200 p-4 flex-shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto hidden md:block z-40">
+        <!-- Gradient Studio Card -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%); padding: 1.15rem 1.2rem; border-radius: 14px; color: white; margin-bottom: 1.1rem;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #5eead4; font-weight: 700;">Virtual Laboratory</div>
+            <div style="font-size: 1.18rem; font-weight: 800; margin-top: 0.15rem;">⚗️ Cheminformatics Studio</div>
+            <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 0.35rem;">Authored by <b>KOLAN MAASIRI REDDY</b> &amp; <b>SEEMA E</b></div>
+        </div>
+
+        <!-- Workspace Navigation -->
+        <div class="mb-4">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 px-1">Workspace Navigation</div>
+            <nav id="navContainer" class="space-y-1">
+                <div class="nav-item active" data-page="overview">
+                    <span class="radio-dot"></span>
+                    <span>🏠 Overview &amp; Hub</span>
+                </div>
+                <div class="nav-item" data-page="theory">
+                    <span class="radio-dot"></span>
+                    <span>📖 Theory &amp; Concepts</span>
+                </div>
+                <div class="nav-item" data-page="studio">
+                    <span class="radio-dot"></span>
+                    <span>🧬 2D/3D Molecular Studio</span>
+                </div>
+                <div class="nav-item" data-page="properties">
+                    <span class="radio-dot"></span>
+                    <span>📊 Descriptor &amp; Property Lab</span>
+                </div>
+                <div class="nav-item" data-page="comparison">
+                    <span class="radio-dot"></span>
+                    <span>📈 Multi-Molecule Comparison</span>
+                </div>
+                <div class="nav-item" data-page="assessment">
+                    <span class="radio-dot"></span>
+                    <span>📝 Knowledge Assessment</span>
+                </div>
+                <div class="nav-item" data-page="dossier">
+                    <span class="radio-dot"></span>
+                    <span>📄 Final Dossier Generator</span>
+                </div>
+            </nav>
+        </div>
+
+        <hr class="border-slate-200 my-4">
+
+        <!-- Researcher Profile -->
+        <div class="mb-4">
+            <h4 class="text-sm font-bold text-slate-800 mb-2.5">👤 Researcher Profile</h4>
+            <div class="space-y-2.5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Student / Researcher Name</label>
+                    <input type="text" id="sidebarStudentName" placeholder="Enter your full name"
+                        class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Registration / Roll ID</label>
+                    <input type="text" id="sidebarRegNumber" placeholder="e.g., RA241100..."
+                        class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-slate-200 my-4">
+
+        <!-- Active Workspace Molecule -->
+        <div class="mb-4">
+            <h4 class="text-sm font-bold text-slate-800 mb-2">🧪 Active Workspace Molecule</h4>
+            <div id="sidebarActiveSmilesPill" class="smiles-pill">CCO</div>
+            <p class="text-xs text-slate-500 mt-1.5">Shared automatically across visualization, property, and report modules.</p>
+        </div>
+
+        <!-- Expandable Learning Outcomes -->
+        <details class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-700 shadow-sm">
+            <summary class="font-bold text-slate-800 cursor-pointer select-none">🎯 Core Learning Outcomes</summary>
+            <ul class="list-disc pl-4 mt-2.5 space-y-1.5 text-slate-600 leading-relaxed">
+                <li><b>SMILES Encoding:</b> Linear notation for chemical graphs</li>
+                <li><b>2D &amp; 3D Topologies:</b> Conformational embedding &amp; force-field optimization</li>
+                <li><b>Physicochemical Metrics:</b> Lipinski parameters, TPSA, LogP, &amp; bond order analysis</li>
+                <li><b>QSAR Foundations:</b> Structure–property comparisons across compound series</li>
+            </ul>
+        </details>
+    </aside>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 px-4 sm:px-8 py-6 max-w-6xl mx-auto w-full">
+
+        <!-- ============================================================ -->
+        <!-- PAGE 1: OVERVIEW & HUB                                       -->
+        <!-- ============================================================ -->
+        <section id="page-overview" class="page-section">
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-badge">Computational Chemistry &amp; Molecular Modeling Platform</div>
+                <h1 class="hero-title">⚗️ Cheminformatics Virtual Laboratory</h1>
+                <p class="hero-subtitle">
+                    An interactive workbench for SMILES input, schematic 2D structure rendering, browser-based 3D molecular viewing, and exploratory molecular-property analysis.
+                </p>
+                <div class="hero-meta">
+                    <div class="hero-meta-item">🏛️ <b>SRM Institute of Science and Technology, Tiruchirappalli</b></div>
+                    <div class="hero-meta-item">🔬 <b>STUDENTS OF ENGINEERING AND TECHNOLOGY | School of Sciences | Division of Chemistry</b></div>
+                    <div class="hero-meta-item">✍️ <b>Authors: KOLAN MAASIRI REDDY &amp; SEEMA E</b></div>
+                </div>
+            </div>
+
+            <!-- Workbench Modules Grid -->
+            <h3 class="text-lg font-extrabold text-slate-900 mb-3">🚀 Workbench Modules</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="space-y-4">
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('studio')">
+                        <div class="lab-card-title">🧬 2D &amp; 3D Molecular Studio</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Run lightweight checks on SMILES input, inspect estimated atom and bond information, and explore interactive 3D structure views. Custom inputs use simplified schematic geometry.
+                        </p>
+                    </div>
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('comparison')">
+                        <div class="lab-card-title">📈 Structure–Property Analysis</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Benchmark multiple molecules side by side across molecular weight, lipophilicity (LogP), polarity (TPSA), and ring counts with visual charts.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('properties')">
+                        <div class="lab-card-title">📊 Descriptor &amp; Property Lab</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Explore 19 molecular descriptors and Lipinski-style screening. Bundled examples use stored molecular data; custom SMILES use heuristic estimates.
+                        </p>
+                    </div>
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('assessment')">
+                        <div class="lab-card-title">📝 Knowledge Assessment</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Test your mastery of SMILES syntax, bond order rules, topological polar surface area, and 3D molecular representations.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('theory')">
+                        <div class="lab-card-title">📖 Theory &amp; Concepts</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Explore structured reference guides covering chemical graph notation, quantitative descriptors, and 3D rendering styles.
+                        </p>
+                    </div>
+                    <div class="lab-card cursor-pointer hover:border-teal-500" onclick="switchPage('dossier')">
+                        <div class="lab-card-title">📄 Final Dossier Generator</div>
+                        <p class="text-slate-600 text-sm m-0 leading-relaxed">
+                            Compile a multi-molecule PDF summary with structure views, descriptor tables, and chemical interpretations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick-Launch Reference Library -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-900">🧪 Quick-Launch Reference Library</h3>
+                    <p class="text-xs text-slate-500">Click any compound row or "Launch in Studio" to load its SMILES directly into the active workspace.</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                                <th class="py-3 px-4">Compound Name</th>
+                                <th class="py-3 px-4">Chemical Class</th>
+                                <th class="py-3 px-4">SMILES Notation</th>
+                                <th class="py-3 px-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="referenceTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Authorship Card -->
+            <div class="author-card">
+                <div class="author-role">✨ Project Authorship &amp; Development</div>
+                <div class="author-name">KOLAN MAASIRI REDDY &amp; SEEMA E</div>
+                <div class="text-slate-700 text-sm mt-1 leading-relaxed">
+                    Division of Chemistry, School of Sciences • STUDENTS OF ENGINEERING AND TECHNOLOGY<br>
+                    <b>SRM Institute of Science and Technology, Tiruchirappalli</b>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 2: THEORY & CONCEPTS                                    -->
+        <!-- ============================================================ -->
+        <section id="page-theory" class="page-section hidden">
+            <div class="page-header">
+                <h1>📖 Foundations of Cheminformatics</h1>
+                <p>Core principles of line notation, molecular descriptors, and three-dimensional chemical modeling.</p>
+            </div>
+
+            <!-- Tabs Header -->
+            <div class="flex flex-wrap gap-2 border-b border-slate-200 mb-5">
+                <button onclick="switchTheoryTab('tab-smiles')" id="btn-tab-smiles"
+                    class="theory-tab-btn px-4 py-2.5 text-sm font-bold border-b-2 border-teal-600 text-teal-700 bg-teal-50/60 rounded-t-lg">
+                    🔤 SMILES Line Notation
+                </button>
+                <button onclick="switchTheoryTab('tab-descriptors')" id="btn-tab-descriptors"
+                    class="theory-tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900">
+                    📐 Quantitative Descriptors
+                </button>
+                <button onclick="switchTheoryTab('tab-3dmodels')" id="btn-tab-3dmodels"
+                    class="theory-tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900">
+                    🧊 3D Rendering Models
+                </button>
+            </div>
+
+            <!-- Tab 1: SMILES -->
+            <div id="tab-smiles" class="theory-tab-content grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="lab-card">
+                        <div class="lab-card-title">What is Cheminformatics?</div>
+                        <p class="text-slate-700 text-sm leading-relaxed">
+                            <b>Cheminformatics</b> integrates <b>Chemistry</b>, <b>Computer Science</b>, and <b>Information Science</b>
+                            to encode, store, index, and model chemical structures. By translating molecular graphs into machine-readable
+                            representations, researchers can rapidly predict physicochemical properties and screen large chemical libraries.
+                        </p>
+                    </div>
+                    <div class="lab-card">
+                        <div class="lab-card-title">Simplified Molecular Input Line Entry System (SMILES)</div>
+                        <p class="text-slate-700 text-sm leading-relaxed mb-2">
+                            <b>SMILES</b> encodes a two-dimensional molecular graph as a compact ASCII string:
+                        </p>
+                        <ul class="list-disc pl-5 text-slate-700 text-sm space-y-1.5 leading-relaxed">
+                            <li><b>Atoms:</b> Represented by atomic symbols (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">C</code>, <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">N</code>, <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">O</code>, <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">S</code>). Lowercase letters (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">c</code>, <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">n</code>) denote aromatic atoms.</li>
+                            <li><b>Bonds:</b> Single bonds are implicit; double (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">=</code>) and triple (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">#</code>) bonds are written explicitly.</li>
+                            <li><b>Branches:</b> Enclosed in parentheses, e.g., <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">CC(=O)O</code> for acetic acid.</li>
+                            <li><b>Rings:</b> Indicated by matching numeric ring-closure digits, e.g., <code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">c1ccccc1</code> for benzene.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="lg:col-span-5">
+                    <h4 class="text-sm font-bold text-slate-800 mb-2.5">Quick Syntax Reference</h4>
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                                    <th class="py-2.5 px-3">Molecule</th>
+                                    <th class="py-2.5 px-3">SMILES</th>
+                                    <th class="py-2.5 px-3">Key Feature</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr><td class="py-2.5 px-3 font-medium">Ethanol</td><td class="py-2.5 px-3 mono text-teal-700">CCO</td><td class="py-2.5 px-3 text-slate-600">Linear chain</td></tr>
+                                <tr><td class="py-2.5 px-3 font-medium">Benzene</td><td class="py-2.5 px-3 mono text-teal-700">c1ccccc1</td><td class="py-2.5 px-3 text-slate-600">Aromatic ring (1)</td></tr>
+                                <tr><td class="py-2.5 px-3 font-medium">Phenol</td><td class="py-2.5 px-3 mono text-teal-700">Oc1ccccc1</td><td class="py-2.5 px-3 text-slate-600">Substituted ring</td></tr>
+                                <tr><td class="py-2.5 px-3 font-medium">Acetic Acid</td><td class="py-2.5 px-3 mono text-teal-700">CC(=O)O</td><td class="py-2.5 px-3 text-slate-600">Carbonyl branch</td></tr>
+                                <tr><td class="py-2.5 px-3 font-medium">Aspirin</td><td class="py-2.5 px-3 mono text-teal-700">CC(=O)Oc1ccccc1C(=O)O</td><td class="py-2.5 px-3 text-slate-600">Ester + aromatic acid</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Quantitative Descriptors -->
+            <div id="tab-descriptors" class="theory-tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="lab-card">
+                    <div class="lab-card-title">⚖️ Physicochemical &amp; Lipinski Metrics</div>
+                    <ul class="list-disc pl-5 text-slate-700 text-sm space-y-2 leading-relaxed">
+                        <li><b>Molecular Weight (MW):</b> Average mass of the molecule in g/mol; influences diffusion and bioavailability.</li>
+                        <li><b>LogP (Octanol–Water Partition Coefficient):</b> Quantifies lipophilicity vs. hydrophilicity.</li>
+                        <li><b>TPSA (Topological Polar Surface Area):</b> Sum of surface contributions of polar atoms (primarily O and N, in Å²).</li>
+                        <li><b>HBD &amp; HBA:</b> Counts of hydrogen-bond donors (OH, NH) and acceptors (O, N atoms).</li>
+                    </ul>
+                </div>
+                <div class="lab-card">
+                    <div class="lab-card-title">🔗 Topological &amp; Bonding Metrics</div>
+                    <ul class="list-disc pl-5 text-slate-700 text-sm space-y-2 leading-relaxed">
+                        <li><b>Sigma (σ) &amp; Pi (π) Bonds:</b> Single bonds contribute 1 σ bond; double bonds contribute 1 σ + 1 π; triple bonds contribute 1 σ + 2 π.</li>
+                        <li><b>Rotatable Bonds:</b> Single non-ring bonds attached to non-terminal heavy atoms; measures conformational flexibility.</li>
+                        <li><b>Fraction Csp³:</b> Ratio of sp³-hybridized carbons to total carbons; indicates 3D saturation vs. planarity.</li>
+                        <li><b>Molar Refractivity:</b> Reflects overall steric bulk and electronic polarizability.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab 3: 3D Rendering Models -->
+            <div id="tab-3dmodels" class="theory-tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="lab-card">
+                    <div class="lab-card-title">🟢 Ball and Stick &amp; 🟡 Stick Models</div>
+                    <p class="text-slate-700 text-sm leading-relaxed">
+                        <b>Ball and Stick</b> renders atoms as scaled spheres connected by cylindrical rods, offering clear visibility of bond angles and hybridizations.<br><br>
+                        <b>Stick Model</b> emphasizes the covalent framework and connectivity without large atomic spheres.
+                    </p>
+                </div>
+                <div class="lab-card">
+                    <div class="lab-card-title">🔵 Space Filling (CPK) &amp; ⚫ Wireframe</div>
+                    <p class="text-slate-700 text-sm leading-relaxed">
+                        <b>Space Filling</b> scales atomic spheres to their van der Waals radii, illustrating true steric volume and molecular surface crowding.<br><br>
+                        <b>Wireframe</b> provides a minimal skeletal line view ideal for inspecting complex cyclic cores.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 3: 2D/3D MOLECULAR STUDIO                               -->
+        <!-- ============================================================ -->
+        <section id="page-studio" class="page-section hidden">
+            <div class="page-header">
+                <h1>🧬 2D &amp; 3D Molecular Visualization Studio</h1>
+                <p>Enter a SMILES string or load a preset molecule to inspect its 2D topology, σ/π bonding breakdown, and interactive 3D conformation.</p>
+            </div>
+
+            <!-- Input Control Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-5 items-end bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="md:col-span-6">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Chemical Structure (SMILES)</label>
+                    <input type="text" id="studioSmilesInput" value="CCO"
+                        class="w-full px-3.5 py-2 text-sm mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Type any valid SMILES string, e.g., CCO or c1ccccc1">
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Preset Reference Molecule</label>
+                    <select id="studioPresetSelect" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="Ethanol">Ethanol (CCO)</option>
+                        <option value="Benzene">Benzene (c1ccccc1)</option>
+                        <option value="Phenol">Phenol (Oc1ccccc1)</option>
+                        <option value="Acetic Acid">Acetic Acid (CC(=O)O)</option>
+                        <option value="Aspirin">Aspirin (CC(=O)Oc1ccccc1C(=O)O)</option>
+                        <option value="Caffeine">Caffeine (CN1C=NC2=C1C(=O)N(C(=O)N2C)C)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <button onclick="loadPresetFromSelect('studioPresetSelect')" class="btn-teal w-full text-sm py-2">
+                        ⚡ Load Preset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="studioErrorBanner" class="hidden bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-xl text-sm font-medium mb-5">
+                ❌ Invalid SMILES notation. Please verify your syntax (e.g., check ring numbers and parentheses).
+            </div>
+
+            <!-- Studio Main Content -->
+            <div id="studioValidContent">
+                <!-- Top KPI Summary Strip (5 Columns) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5" id="studioKpiStrip">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- 2D and 3D Split View -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <!-- Left: 2D Structure & Identifiers -->
+                    <div class="lg:col-span-5 space-y-4">
+                        <div class="lab-card mb-0">
+                            <div class="lab-card-title">📐 2D Topological Structure</div>
+                            <div class="bg-white border border-slate-100 rounded-xl p-2 flex items-center justify-center">
+                                <canvas id="studio2dCanvas" width="460" height="340" class="w-full h-auto max-h-72 object-contain"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="lab-card">
+                            <div class="lab-card-title">🔎 Structure Identifiers</div>
+                            <div class="space-y-1.5 text-sm text-slate-700">
+                                <p><b>Input SMILES:</b> <code id="studioIdInputSmiles" class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">CCO</code></p>
+                                <p><b>Canonical SMILES:</b> <code id="studioIdCanonicalSmiles" class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700">CCO</code></p>
+                                <p><b>Heavy-Atom Graph Bonds:</b> <span id="studioIdHeavyBonds" class="font-semibold">2</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Interactive 3D molecular structure viewer -->
+                    <div class="lg:col-span-7">
+                        <div class="lab-card">
+                            <div class="lab-card-title">🌐 Interactive 3D Structure Viewer (3Dmol.js)</div>
+                            <!-- Controls -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 items-end">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">3D Rendering Style</label>
+                                    <select id="studio3dStyle" onchange="renderMain3DViewer()" class="w-full px-2.5 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg">
+                                        <option value="Ball and Stick">Ball and Stick</option>
+                                        <option value="Stick">Stick</option>
+                                        <option value="Space Filling">Space Filling</option>
+                                        <option value="Wireframe">Wireframe</option>
+                                        <option value="Cartoon">Cartoon</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Canvas Background</label>
+                                    <select id="studio3dBg" onchange="renderMain3DViewer()" class="w-full px-2.5 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg">
+                                        <option value="#0f172a">Dark Slate (#0f172a)</option>
+                                        <option value="#ffffff">Pure White (#ffffff)</option>
+                                        <option value="#f8fafc">Soft Gray (#f8fafc)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center h-9">
+                                    <label class="inline-flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-medium text-slate-700 select-none">
+                                        <input type="checkbox" id="studio3dSurface" onchange="renderMain3DViewer()" class="w-4 h-4 accent-teal-600 rounded">
+                                        <span>vdW Surface</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 3Dmol Container -->
+                            <div id="studio3dContainer" class="viewer-3d-box"></div>
+                            <div class="flex items-center justify-between text-xs text-slate-500 mt-2">
+                                <span>💡 Drag to rotate • Scroll to zoom • Right-drag to pan</span>
+                                <button onclick="resetMain3DZoom()" class="text-teal-700 font-semibold hover:underline">🔄 Center Camera</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 4: DESCRIPTOR & PROPERTY LAB                            -->
+        <!-- ============================================================ -->
+        <section id="page-properties" class="page-section hidden">
+            <div class="page-header">
+                <h1>📊 Complete Molecular Properties &amp; Lipinski Profiler</h1>
+                <p>Review molecular descriptors and Lipinski-style screening. Preset molecules use stored data; custom inputs use simplified heuristic estimates.</p>
+            </div>
+
+            <!-- Input Control Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-5 items-end bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="md:col-span-6">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Enter SMILES String</label>
+                    <input type="text" id="propSmilesInput" value="CCO"
+                        class="w-full px-3.5 py-2 text-sm mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Choose Example Molecule</label>
+                    <select id="propPresetSelect" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="Ethanol">Ethanol</option>
+                        <option value="Benzene">Benzene</option>
+                        <option value="Phenol">Phenol</option>
+                        <option value="Acetic Acid">Acetic Acid</option>
+                        <option value="Aspirin">Aspirin</option>
+                        <option value="Caffeine">Caffeine</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <button onclick="loadPresetFromSelect('propPresetSelect')" class="btn-teal w-full text-sm py-2">
+                        ⚡ Load Preset
+                    </button>
+                </div>
+            </div>
+
+            <div id="propErrorBanner" class="hidden bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-xl text-sm font-medium mb-5">
+                ❌ Invalid SMILES notation. Please check the chemical structure.
+            </div>
+
+            <div id="propValidContent">
+                <!-- Top Split: 2D Structure & 8 Metric Tiles + Lipinski -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+                    <div class="lg:col-span-5">
+                        <div class="lab-card h-full flex flex-col justify-between">
+                            <div class="lab-card-title">🧬 2D Structure &amp; Identity</div>
+                            <div class="bg-white border border-slate-100 rounded-xl p-2 flex items-center justify-center my-auto">
+                                <canvas id="prop2dCanvas" width="460" height="340" class="w-full h-auto max-h-64 object-contain"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 flex flex-col justify-between space-y-4">
+                        <div class="lab-card mb-0">
+                            <div class="lab-card-title">📊 Key Physicochemical &amp; Topological Metrics</div>
+                            <div id="propMetricsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                                <!-- 8 Tiles Populated via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Lipinski Banner -->
+                        <div id="lipinskiBanner" class="lab-card mb-0" style="background:#f0fdfa; border-color:#99f6e4;">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200 my-6">
+
+                <!-- Comprehensive Descriptor Table -->
+                <h3 class="text-lg font-extrabold text-slate-900 mb-3">📑 Comprehensive Descriptor Table &amp; Chemical Interpretation</h3>
+                <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-5">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                                    <th class="py-3 px-4 w-1/4">Descriptor / Property</th>
+                                    <th class="py-3 px-4 w-1/6">Calculated Value</th>
+                                    <th class="py-3 px-4">Chemical Interpretation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="propTableBody" class="divide-y divide-slate-200">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Export Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <button onclick="downloadPropertiesCSV()" class="btn-dark w-full text-sm">
+                        ⬇️ Download Properties Table (CSV)
+                    </button>
+                    <button onclick="downloadSingleMoleculePDF()" class="btn-dark w-full text-sm">
+                        📄 Download Single-Molecule PDF Report
+                    </button>
+                </div>
+
+                <!-- Expandable 3D structure viewer -->
+                <details id="prop3dExpander" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <summary class="font-bold text-slate-800 cursor-pointer select-none text-sm">
+                        🌐 Open Interactive 3D Structure Viewer
+                    </summary>
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Select 3D Representation</label>
+                                <select id="prop3dStyle" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg">
+                                    <option value="Ball and Stick">Ball and Stick</option>
+                                    <option value="Stick">Stick</option>
+                                    <option value="Space Filling">Space Filling</option>
+                                    <option value="Wireframe">Wireframe</option>
+                                    <option value="Cartoon">Cartoon</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center h-10">
+                                <label class="inline-flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+                                    <input type="checkbox" id="prop3dSurface" class="w-4 h-4 accent-teal-600 rounded">
+                                    <span>Show van der Waals Surface</span>
+                                </label>
+                            </div>
+                            <div>
+                                <button onclick="renderProp3DViewer()" class="btn-teal w-full text-sm">
+                                    🚀 Render 3D Structure
+                                </button>
+                            </div>
+                        </div>
+                        <div id="prop3dContainer" class="viewer-3d-box hidden"></div>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 5: MULTI-MOLECULE COMPARISON                            -->
+        <!-- ============================================================ -->
+        <section id="page-comparison" class="page-section hidden">
+            <div class="page-header">
+                <h1>📈 Structure–Property Comparative Analysis</h1>
+                <p>Compare multiple chemical structures simultaneously across key physicochemical descriptors and visual plots.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+                <!-- Dataset Input -->
+                <div class="lg:col-span-5">
+                    <div class="lab-card h-full">
+                        <div class="lab-card-title">🧪 Compound Dataset Input</div>
+                        <p class="text-xs text-slate-500 mb-2">Format: <code class="bg-slate-100 px-1 py-0.5 rounded">Molecule Name, SMILES</code> (one compound per line)</p>
+                        <textarea id="comparisonInput" rows="9" oninput="updateComparisonModule()"
+                            class="w-full p-3 text-xs sm:text-sm mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 leading-relaxed">Ethanol,CCO
+Benzene,c1ccccc1
+Phenol,Oc1ccccc1
+Acetic Acid,CC(=O)O
+Aspirin,CC(=O)Oc1ccccc1C(=O)O
+Caffeine,CN1C=NC2=C1C(=O)N(C(=O)N2C)C</textarea>
+                    </div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="lg:col-span-7">
+                    <div class="lab-card h-full">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                            <div class="lab-card-title mb-0">📊 Descriptor Visual Comparison</div>
+                            <select id="comparisonMetricSelect" onchange="updateComparisonModule()"
+                                class="px-3 py-1.5 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-lg font-medium">
+                                <option value="MW">MW (Molecular Weight)</option>
+                                <option value="LogP">LogP</option>
+                                <option value="TPSA">TPSA</option>
+                                <option value="HBD">HBD</option>
+                                <option value="HBA">HBA</option>
+                                <option value="Rotatable Bonds">Rotatable Bonds</option>
+                                <option value="Sigma Bonds">Sigma Bonds</option>
+                                <option value="Pi Bonds">Pi Bonds</option>
+                            </select>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="comparisonChartCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quantitative Comparison Matrix -->
+            <h4 class="text-base font-extrabold text-slate-900 mb-2.5">📋 Quantitative Comparison Matrix</h4>
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                                <th class="py-2.5 px-3">Molecule</th>
+                                <th class="py-2.5 px-3">Formula</th>
+                                <th class="py-2.5 px-3">MW</th>
+                                <th class="py-2.5 px-3">LogP</th>
+                                <th class="py-2.5 px-3">TPSA</th>
+                                <th class="py-2.5 px-3">HBD</th>
+                                <th class="py-2.5 px-3">HBA</th>
+                                <th class="py-2.5 px-3">Rot. Bonds</th>
+                                <th class="py-2.5 px-3">Rings</th>
+                                <th class="py-2.5 px-3">σ Bonds</th>
+                                <th class="py-2.5 px-3">π Bonds</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonTableBody" class="divide-y divide-slate-200">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button onclick="downloadComparisonCSV()" class="btn-dark text-sm">
+                ⬇️ Download Comparison Dataset (CSV)
+            </button>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 6: KNOWLEDGE ASSESSMENT                                 -->
+        <!-- ============================================================ -->
+        <section id="page-assessment" class="page-section hidden">
+            <div class="page-header">
+                <h1>📝 Cheminformatics Knowledge Assessment</h1>
+                <p>Evaluate your understanding of SMILES encoding, bond orders, molecular polarity, and 3D visualization models.</p>
+            </div>
+
+            <!-- Questions Grid -->
+            <div id="quizContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <!-- Populated via JS -->
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-1.5">
+                    <span id="quizProgressText">Progress: 0/12 questions answered</span>
+                    <button onclick="resetQuiz()" class="text-teal-700 hover:underline">Reset Answers</button>
+                </div>
+                <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                    <div id="quizProgressBar" class="bg-teal-600 h-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <button onclick="submitQuiz()" class="btn-teal w-full py-2.5 text-sm mb-5">
+                ✅ Submit &amp; Grade Assessment
+            </button>
+
+            <!-- Results Box -->
+            <div id="quizResultBox" class="hidden space-y-4"></div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PAGE 7: FINAL DOSSIER GENERATOR                              -->
+        <!-- ============================================================ -->
+        <section id="page-dossier" class="page-section hidden">
+            <div class="page-header">
+                <h1>📄 Final Student Molecular Analysis Report</h1>
+                <p>Generate a comprehensive, publication-styled PDF dossier for one or more SMILES strings with 2D/3D structures and interpretations.</p>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-5 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Student / Researcher Name for Report</label>
+                        <input type="text" id="dossierStudentName" placeholder="Enter full name"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Registration / Roll Number for Report</label>
+                        <input type="text" id="dossierRegNumber" placeholder="Enter registration number"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700">Enter SMILES Strings (one molecule per line)</label>
+                        <button onclick="loadAllPresetsIntoDossier()" class="text-xs font-semibold text-teal-700 hover:underline">
+                            + Load Multiple Preset Examples
+                        </button>
+                    </div>
+                    <textarea id="dossierSmilesText" rows="5" oninput="updateDossierPreview()"
+                        class="w-full p-3 text-sm mono bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="Example: CCO on line 1, c1ccccc1 on line 2, CC(=O)Oc1ccccc1C(=O)O on line 3.">CCO</textarea>
+                </div>
+            </div>
+
+            <!-- Warning Banner for Invalid SMILES -->
+            <div id="dossierWarningBanner" class="hidden bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl text-sm mb-4"></div>
+
+            <!-- Success & Preview Table -->
+            <div id="dossierValidSection">
+                <div id="dossierSuccessBanner" class="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-xl text-sm font-medium mb-4">
+                    ✅ 1 valid molecule(s) verified and ready for PDF compilation.
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-5">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
+                                    <th class="py-2.5 px-4">No.</th>
+                                    <th class="py-2.5 px-4">Input SMILES</th>
+                                    <th class="py-2.5 px-4">Canonical SMILES</th>
+                                    <th class="py-2.5 px-4">Molecular Formula</th>
+                                    <th class="py-2.5 px-4">Molecular Weight (g/mol)</th>
+                                    <th class="py-2.5 px-4">LogP</th>
+                                    <th class="py-2.5 px-4">TPSA (Å²)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dossierPreviewBody" class="divide-y divide-slate-200">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <button onclick="compileCompleteDossierPDF()" class="btn-teal w-full py-3 text-sm shadow-md">
+                    📄 Compile &amp; Download Complete PDF Dossier
+                </button>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="custom-footer">
+            <b>⚗️ Cheminformatics Virtual Laboratory</b> • Authored &amp; Developed by <b>KOLAN MAASIRI REDDY</b> &amp; <b>SEEMA E</b><br>
+            Powered by browser-based JavaScript, 3Dmol.js, Chart.js &amp; jsPDF
+        </footer>
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- APPLICATION LOGIC & LIGHTWEIGHT JAVASCRIPT MOLECULAR DATA ENGINE -->
+    <!-- ============================================================ -->
+    <script>
+        // ============================================================
+        // 1. BUNDLED PRESET MOLECULE DATABASE (2D, 3D XYZ, AND PROPERTY DATA)
+        // ============================================================
+        const PRESET_DATABASE = {
+            "CCO": {
+                name: "Ethanol",
+                chemClass: "Primary Alcohol",
+                canonical: "CCO",
+                properties: {
+                    "Molecular Formula": "C2H6O",
+                    "Molecular Weight": 46.069,
+                    "Exact Molecular Weight": 46.0419,
+                    "LogP": -0.001,
+                    "TPSA": 20.23,
+                    "Hydrogen Bond Donors": 1,
+                    "Hydrogen Bond Acceptors": 1,
+                    "Rotatable Bonds": 0,
+                    "Ring Count": 0,
+                    "Aromatic Rings": 0,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 3,
+                    "Heavy Atoms": 3,
+                    "Heavy Atom Bonds": 2,
+                    "Sigma (σ) Bonds": 8,
+                    "Pi (π) Bonds": 0,
+                    "Total Bonds (σ + π)": 8,
+                    "Fraction Csp3": 1.0,
+                    "Molar Refractivity": 12.75
+                },
+                totalAtomsWithH: 9,
+                atoms2d: [
+                    { x: -1.2, y: -0.35, label: "H3C" },
+                    { x: 0.0,  y: 0.35,  label: "C" },
+                    { x: 1.2,  y: -0.35, label: "OH", color: "#e11d48" }
+                ],
+                bonds2d: [
+                    [0, 1, 1],
+                    [1, 2, 1]
+                ],
+                xyz: `9
+Ethanol reference 3D coordinates (bundled preset)
+C   -1.178   -0.301    0.000
+C    0.048    0.585    0.000
+O    1.213   -0.232    0.000
+H   -2.096    0.295    0.000
+H   -1.196   -0.941    0.889
+H   -1.196   -0.941   -0.889
+H    0.045    1.233    0.885
+H    0.045    1.233   -0.885
+H    1.995    0.340    0.000`
+            },
+            "c1ccccc1": {
+                name: "Benzene",
+                chemClass: "Aromatic Hydrocarbon",
+                canonical: "c1ccccc1",
+                properties: {
+                    "Molecular Formula": "C6H6",
+                    "Molecular Weight": 78.114,
+                    "Exact Molecular Weight": 78.047,
+                    "LogP": 1.687,
+                    "TPSA": 0.0,
+                    "Hydrogen Bond Donors": 0,
+                    "Hydrogen Bond Acceptors": 0,
+                    "Rotatable Bonds": 0,
+                    "Ring Count": 1,
+                    "Aromatic Rings": 1,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 6,
+                    "Heavy Atoms": 6,
+                    "Heavy Atom Bonds": 6,
+                    "Sigma (σ) Bonds": 12,
+                    "Pi (π) Bonds": 3,
+                    "Total Bonds (σ + π)": 15,
+                    "Fraction Csp3": 0.0,
+                    "Molar Refractivity": 26.44
+                },
+                totalAtomsWithH: 12,
+                atoms2d: [
+                    { x: 0.0,   y: 1.35,  label: "C" },
+                    { x: 1.17,  y: 0.675, label: "C" },
+                    { x: 1.17,  y: -0.675,label: "C" },
+                    { x: 0.0,   y: -1.35, label: "C" },
+                    { x: -1.17, y: -0.675,label: "C" },
+                    { x: -1.17, y: 0.675, label: "C" }
+                ],
+                bonds2d: [
+                    [0, 1, 2], [1, 2, 1], [2, 3, 2],
+                    [3, 4, 1], [4, 5, 2], [5, 0, 1]
+                ],
+                xyz: `12
+Benzene reference 3D coordinates (bundled preset)
+C    0.000    1.396    0.000
+C    1.209    0.698    0.000
+C    1.209   -0.698    0.000
+C    0.000   -1.396    0.000
+C   -1.209   -0.698    0.000
+C   -1.209    0.698    0.000
+H    0.000    2.483    0.000
+H    2.150    1.241    0.000
+H    2.150   -1.241    0.000
+H    0.000   -2.483    0.000
+H   -2.150   -1.241    0.000
+H   -2.150    1.241    0.000`
+            },
+            "Oc1ccccc1": {
+                name: "Phenol",
+                chemClass: "Aromatic Alcohol",
+                canonical: "Oc1ccccc1",
+                properties: {
+                    "Molecular Formula": "C6H6O",
+                    "Molecular Weight": 94.113,
+                    "Exact Molecular Weight": 94.0419,
+                    "LogP": 1.392,
+                    "TPSA": 20.23,
+                    "Hydrogen Bond Donors": 1,
+                    "Hydrogen Bond Acceptors": 1,
+                    "Rotatable Bonds": 0,
+                    "Ring Count": 1,
+                    "Aromatic Rings": 1,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 7,
+                    "Heavy Atoms": 7,
+                    "Heavy Atom Bonds": 7,
+                    "Sigma (σ) Bonds": 13,
+                    "Pi (π) Bonds": 3,
+                    "Total Bonds (σ + π)": 16,
+                    "Fraction Csp3": 0.0,
+                    "Molar Refractivity": 28.19
+                },
+                totalAtomsWithH: 13,
+                atoms2d: [
+                    { x: 0.0,   y: 1.15,  label: "C" },
+                    { x: 1.15,  y: 0.5,   label: "C" },
+                    { x: 1.15,  y: -0.8,  label: "C" },
+                    { x: 0.0,   y: -1.45, label: "C" },
+                    { x: -1.15, y: -0.8,  label: "C" },
+                    { x: -1.15, y: 0.5,   label: "C" },
+                    { x: 0.0,   y: 2.4,   label: "OH", color: "#e11d48" }
+                ],
+                bonds2d: [
+                    [0, 1, 2], [1, 2, 1], [2, 3, 2],
+                    [3, 4, 1], [4, 5, 2], [5, 0, 1],
+                    [0, 6, 1]
+                ],
+                xyz: `13
+Phenol reference 3D coordinates (bundled preset)
+C    0.000    1.395    0.000
+C    1.212    0.696    0.000
+C    1.208   -0.699    0.000
+C    0.000   -1.398    0.000
+C   -1.208   -0.699    0.000
+C   -1.212    0.696    0.000
+O    0.000    2.760    0.000
+H    2.152    1.239    0.000
+H    2.149   -1.242    0.000
+H    0.000   -2.485    0.000
+H   -2.149   -1.242    0.000
+H   -2.152    1.239    0.000
+H    0.890    3.130    0.000`
+            },
+            "CC(=O)O": {
+                name: "Acetic Acid",
+                chemClass: "Carboxylic Acid",
+                canonical: "CC(=O)O",
+                properties: {
+                    "Molecular Formula": "C2H4O2",
+                    "Molecular Weight": 60.052,
+                    "Exact Molecular Weight": 60.0211,
+                    "LogP": 0.091,
+                    "TPSA": 37.3,
+                    "Hydrogen Bond Donors": 1,
+                    "Hydrogen Bond Acceptors": 1,
+                    "Rotatable Bonds": 0,
+                    "Ring Count": 0,
+                    "Aromatic Rings": 0,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 4,
+                    "Heavy Atoms": 4,
+                    "Heavy Atom Bonds": 3,
+                    "Sigma (σ) Bonds": 7,
+                    "Pi (π) Bonds": 1,
+                    "Total Bonds (σ + π)": 8,
+                    "Fraction Csp3": 0.5,
+                    "Molar Refractivity": 13.34
+                },
+                totalAtomsWithH: 8,
+                atoms2d: [
+                    { x: -1.25, y: -0.45, label: "H3C" },
+                    { x: 0.0,   y: 0.25,  label: "C" },
+                    { x: 0.0,   y: 1.55,  label: "O",  color: "#e11d48" },
+                    { x: 1.25,  y: -0.45, label: "OH", color: "#e11d48" }
+                ],
+                bonds2d: [
+                    [0, 1, 1],
+                    [1, 2, 2],
+                    [1, 3, 1]
+                ],
+                xyz: `8
+Acetic acid reference 3D coordinates (bundled preset)
+C   -1.365   -0.123    0.000
+C    0.089    0.184    0.000
+O    0.585    1.292    0.000
+O    0.819   -0.962    0.000
+H   -1.882    0.838    0.000
+H   -1.642   -0.692    0.889
+H   -1.642   -0.692   -0.889
+H    1.762   -0.728    0.000`
+            },
+            "CC(=O)Oc1ccccc1C(=O)O": {
+                name: "Aspirin",
+                chemClass: "Salicylate Analgesic",
+                canonical: "CC(=O)Oc1ccccc1C(=O)O",
+                properties: {
+                    "Molecular Formula": "C9H8O4",
+                    "Molecular Weight": 180.159,
+                    "Exact Molecular Weight": 180.0423,
+                    "LogP": 1.31,
+                    "TPSA": 63.6,
+                    "Hydrogen Bond Donors": 1,
+                    "Hydrogen Bond Acceptors": 3,
+                    "Rotatable Bonds": 2,
+                    "Ring Count": 1,
+                    "Aromatic Rings": 1,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 13,
+                    "Heavy Atoms": 13,
+                    "Heavy Atom Bonds": 13,
+                    "Sigma (σ) Bonds": 21,
+                    "Pi (π) Bonds": 5,
+                    "Total Bonds (σ + π)": 26,
+                    "Fraction Csp3": 0.111,
+                    "Molar Refractivity": 44.71
+                },
+                totalAtomsWithH: 21,
+                atoms2d: [
+                    { x: -1.4,  y: 0.65,  label: "C" },
+                    { x: -0.35, y: 1.25,  label: "C" },
+                    { x: 0.7,   y: 0.65,  label: "C" },
+                    { x: 0.7,   y: -0.55, label: "C" },
+                    { x: -0.35, y: -1.15, label: "C" },
+                    { x: -1.4,  y: -0.55, label: "C" },
+                    { x: 1.75,  y: 1.25,  label: "C" },
+                    { x: 1.75,  y: 2.45,  label: "O",  color: "#e11d48" },
+                    { x: 2.8,   y: 0.65,  label: "OH", color: "#e11d48" },
+                    { x: 1.75,  y: -1.15, label: "O",  color: "#e11d48" },
+                    { x: 1.75,  y: -2.35, label: "C" },
+                    { x: 0.7,   y: -2.95, label: "O",  color: "#e11d48" },
+                    { x: 2.8,   y: -2.95, label: "CH3" }
+                ],
+                bonds2d: [
+                    [0, 1, 2], [1, 2, 1], [2, 3, 2],
+                    [3, 4, 1], [4, 5, 2], [5, 0, 1],
+                    [2, 6, 1], [6, 7, 2], [6, 8, 1],
+                    [3, 9, 1], [9, 10, 1], [10, 11, 2], [10, 12, 1]
+                ],
+                xyz: `21
+Aspirin reference 3D coordinates (bundled preset)
+C   -1.895    0.857   -0.120
+C   -0.631    1.441   -0.068
+C    0.525    0.669    0.046
+C    0.391   -0.727    0.106
+C   -0.875   -1.310    0.054
+C   -2.018   -0.522   -0.059
+C    1.874    1.298    0.102
+O    2.043    2.499    0.049
+O    2.905    0.425    0.218
+O    1.518   -1.519    0.220
+C    1.829   -2.369   -0.805
+O    1.132   -2.482   -1.787
+C    3.092   -3.128   -0.556
+H   -2.785    1.471   -0.209
+H   -0.538    2.521   -0.115
+H   -0.967   -2.390    0.102
+H   -3.000   -0.980   -0.100
+H    3.749    0.903    0.246
+H    3.321   -3.777   -1.401
+H    3.914   -2.426   -0.402
+H    2.976   -3.732    0.345`
+            },
+            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C": {
+                name: "Caffeine",
+                chemClass: "Xanthine Alkaloid",
+                canonical: "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
+                properties: {
+                    "Molecular Formula": "C8H10N4O2",
+                    "Molecular Weight": 194.194,
+                    "Exact Molecular Weight": 194.0804,
+                    "LogP": -1.029,
+                    "TPSA": 61.82,
+                    "Hydrogen Bond Donors": 0,
+                    "Hydrogen Bond Acceptors": 6,
+                    "Rotatable Bonds": 0,
+                    "Ring Count": 2,
+                    "Aromatic Rings": 2,
+                    "Aliphatic Rings": 0,
+                    "Number of Atoms": 14,
+                    "Heavy Atoms": 14,
+                    "Heavy Atom Bonds": 15,
+                    "Sigma (σ) Bonds": 25,
+                    "Pi (π) Bonds": 4,
+                    "Total Bonds (σ + π)": 29,
+                    "Fraction Csp3": 0.375,
+                    "Molar Refractivity": 50.4
+                },
+                totalAtomsWithH: 24,
+                atoms2d: [
+                    { x: -1.35, y: 0.65,  label: "N", color: "#2563eb" },
+                    { x: -0.25, y: 1.3,   label: "C" },
+                    { x: 0.85,  y: 0.65,  label: "C" },
+                    { x: 0.85,  y: -0.65, label: "C" },
+                    { x: -0.25, y: -1.3,  label: "N", color: "#2563eb" },
+                    { x: -1.35, y: -0.65, label: "C" },
+                    { x: 2.05,  y: 1.05,  label: "N", color: "#2563eb" },
+                    { x: 2.75,  y: 0.0,   label: "C" },
+                    { x: 2.05,  y: -1.05, label: "N", color: "#2563eb" },
+                    { x: -0.25, y: 2.45,  label: "O", color: "#e11d48" },
+                    { x: -2.35, y: -1.25, label: "O", color: "#e11d48" },
+                    { x: -2.4,  y: 1.3,   label: "CH3" },
+                    { x: -0.25, y: -2.5,  label: "CH3" },
+                    { x: 2.45,  y: 2.2,   label: "CH3" }
+                ],
+                bonds2d: [
+                    [0, 1, 1], [1, 2, 1], [2, 3, 2], [3, 4, 1], [4, 5, 1], [5, 0, 1],
+                    [2, 6, 1], [6, 7, 1], [7, 8, 2], [8, 3, 1],
+                    [1, 9, 2], [5, 10, 2],
+                    [0, 11, 1], [4, 12, 1], [6, 13, 1]
+                ],
+                xyz: `24
+Caffeine reference 3D coordinates (bundled preset)
+N   -1.416    0.692    0.000
+C   -0.273    1.464    0.000
+C    0.927    0.694    0.000
+C    0.859   -0.689    0.000
+N   -0.335   -1.369    0.000
+C   -1.524   -0.688    0.000
+N    2.226    1.132    0.000
+C    2.948    0.005    0.000
+N    2.146   -1.106    0.000
+O   -0.312    2.687    0.000
+O   -2.613   -1.251    0.000
+C   -2.691    1.411    0.000
+C   -0.369   -2.833    0.000
+C    2.716    2.509    0.000
+H    3.998    0.008    0.000
+H   -2.512    2.486    0.000
+H   -3.268    1.134    0.886
+H   -3.268    1.134   -0.886
+H   -1.399   -3.192    0.000
+H    0.145   -3.214    0.886
+H    0.145   -3.214   -0.886
+H    3.806    2.516    0.000
+H    2.357    3.033    0.888
+H    2.357    3.033   -0.888`
+            }
+        };
+
+        const PRESET_MAP_BY_NAME = {
+            "Ethanol": "CCO",
+            "Benzene": "c1ccccc1",
+            "Phenol": "Oc1ccccc1",
+            "Acetic Acid": "CC(=O)O",
+            "Aspirin": "CC(=O)Oc1ccccc1C(=O)O",
+            "Caffeine": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+        };
+
+        // ============================================================
+        // 2. DYNAMIC CUSTOM SMILES PARSER & CALCULATOR FALLBACK
+        // ============================================================
+        function parseAndCalculateMolecule(rawSmiles) {
+            if (!rawSmiles || !rawSmiles.trim()) return null;
+            const s = rawSmiles.trim();
+
+            // Check if exact preset match (case-sensitive or canonical match)
+            if (PRESET_DATABASE[s]) {
+                return PRESET_DATABASE[s];
+            }
+            for (const key in PRESET_DATABASE) {
+                if (PRESET_DATABASE[key].canonical === s || key.toLowerCase() === s.toLowerCase()) {
+                    return PRESET_DATABASE[key];
+                }
+            }
+
+            // Validate basic SMILES syntax (balanced parentheses, valid characters, matching ring digits)
+            if (!/^[A-Za-z0-9@+\-\[\]\(\)=#$:/\\.%]+$/.test(s)) return null;
+            let parenDepth = 0;
+            for (const ch of s) {
+                if (ch === '(') parenDepth++;
+                if (ch === ')') parenDepth--;
+                if (parenDepth < 0) return null;
+            }
+            if (parenDepth !== 0) return null;
+
+            // Ring closure check
+            const ringCounts = {};
+            const stripped = s.replace(/\[.*?\]/g, 'X');
+            for (const ch of stripped) {
+                if (/[0-9]/.test(ch)) {
+                    ringCounts[ch] = (ringCounts[ch] || 0) + 1;
+                }
+            }
+            for (const digit in ringCounts) {
+                if (ringCounts[digit] % 2 !== 0) return null;
+            }
+
+            // Parse atoms & bonds for arbitrary valid SMILES
+            const atomRegex = /Cl|Br|[BCNOPSFIbcnops]/g;
+            const atoms = s.match(atomRegex);
+            if (!atoms || atoms.length === 0) return null;
+
+            const counts = { C: 0, N: 0, O: 0, S: 0, P: 0, F: 0, Cl: 0, Br: 0, I: 0, B: 0 };
+            let aromaticAtoms = 0;
+            atoms.forEach(a => {
+                if (a === a.toLowerCase() && a !== 'Cl' && a !== 'Br') {
+                    aromaticAtoms++;
+                    counts[a.toUpperCase()] = (counts[a.toUpperCase()] || 0) + 1;
+                } else {
+                    counts[a] = (counts[a] || 0) + 1;
+                }
+            });
+
+            const doubleBonds = (s.match(/=/g) || []).length;
+            const tripleBonds = (s.match(/#/g) || []).length;
+            const numRings = Object.keys(ringCounts).length;
+            const heavyAtoms = atoms.length;
+            const heavyAtomBonds = heavyAtoms - 1 + numRings;
+            const aromaticRings = Math.floor(aromaticAtoms / 5);
+            const aliphaticRings = Math.max(0, numRings - aromaticRings);
+
+            const piBonds = doubleBonds + (tripleBonds * 2) + (aromaticRings * 3);
+            // Estimate implicit hydrogens using standard valence rules
+            const maxValenceSum = (counts.C * 4) + (counts.N * 3) + (counts.O * 2) + (counts.S * 2) + (counts.P * 3) + counts.F + counts.Cl + counts.Br + counts.I;
+            const usedValence = (heavyAtomBonds + piBonds) * 2;
+            const hCount = Math.max(0, Math.round(maxValenceSum - usedValence));
+
+            const sigmaBonds = heavyAtomBonds + hCount;
+            const totalBonds = sigmaBonds + piBonds;
+
+            // Formula string
+            let formula = "";
+            if (counts.C > 0) formula += "C" + (counts.C > 1 ? counts.C : "");
+            if (hCount > 0) formula += "H" + (hCount > 1 ? hCount : "");
+            ["B", "Br", "Cl", "F", "I", "N", "O", "P", "S"].forEach(el => {
+                if (counts[el] > 0) formula += el + (counts[el] > 1 ? counts[el] : "");
+            });
+
+            const weights = { C: 12.011, H: 1.008, O: 15.999, N: 14.007, S: 32.06, P: 30.974, F: 18.998, Cl: 35.45, Br: 79.904, I: 126.904, B: 10.81 };
+            const exactWeights = { C: 12.0000, H: 1.0078, O: 15.9949, N: 14.0031, S: 31.9721, P: 30.9738, F: 18.9984, Cl: 34.9689, Br: 78.9183, I: 126.9045, B: 11.0093 };
+
+            let mw = hCount * weights.H;
+            let exactMw = hCount * exactWeights.H;
+            Object.keys(counts).forEach(el => {
+                mw += counts[el] * (weights[el] || 12);
+                exactMw += counts[el] * (exactWeights[el] || 12);
+            });
+
+            const logP = Number(((counts.C * 0.45) - (counts.O * 0.85) - (counts.N * 0.65) + (counts.Cl * 0.6) + (aromaticRings * 0.35)).toFixed(3));
+            const tpsa = Number(((counts.O * 20.23) + (counts.N * 15.6)).toFixed(2));
+            const hba = counts.O + counts.N;
+            const hbd = Math.min(hba, Math.max(0, (s.match(/O|N/g) || []).length - doubleBonds));
+            const rotBonds = Math.max(0, heavyAtoms - (aromaticAtoms || 0) - 3);
+            const sp2Carbons = Math.min(counts.C, aromaticAtoms + (doubleBonds * 2));
+            const csp3 = counts.C > 0 ? Number((Math.max(0, counts.C - sp2Carbons) / counts.C).toFixed(3)) : 0;
+            const mr = Number(((heavyAtoms * 3.85) + (hCount * 1.05)).toFixed(2));
+
+            // Generate simplified schematic 2D & 3D coordinates for custom SMILES
+            const atoms2d = [];
+            const bonds2d = [];
+            let xyzLines = [`${heavyAtoms}`, `Custom Molecule ${s}`];
+
+            for (let i = 0; i < atoms.length; i++) {
+                const el = atoms[i].length === 1 ? atoms[i].toUpperCase() : atoms[i];
+                const angle = (i % 2 === 0) ? 0.5 : -0.5;
+                const x = (i - (atoms.length - 1) / 2) * 1.15;
+                const y = angle;
+                const z = (i % 3 === 0) ? 0.25 : -0.25;
+                let color = "#0f172a";
+                if (el === "O") color = "#e11d48";
+                if (el === "N") color = "#2563eb";
+                if (el === "S") color = "#ca8a04";
+                if (el === "Cl" || el === "F") color = "#16a34a";
+
+                atoms2d.push({ x, y, label: el, color });
+                if (i > 0) bonds2d.push([i - 1, i, 1]);
+                xyzLines.push(`${el}   ${x.toFixed(3)}   ${y.toFixed(3)}   ${z.toFixed(3)}`);
+            }
+
+            return {
+                name: "Custom Structure",
+                chemClass: "User-Defined Compound",
+                canonical: s,
+                properties: {
+                    "Molecular Formula": formula,
+                    "Molecular Weight": Number(mw.toFixed(3)),
+                    "Exact Molecular Weight": Number(exactMw.toFixed(4)),
+                    "LogP": logP,
+                    "TPSA": tpsa,
+                    "Hydrogen Bond Donors": hbd,
+                    "Hydrogen Bond Acceptors": hba,
+                    "Rotatable Bonds": rotBonds,
+                    "Ring Count": numRings,
+                    "Aromatic Rings": aromaticRings,
+                    "Aliphatic Rings": aliphaticRings,
+                    "Number of Atoms": heavyAtoms,
+                    "Heavy Atoms": heavyAtoms,
+                    "Heavy Atom Bonds": heavyAtomBonds,
+                    "Sigma (σ) Bonds": sigmaBonds,
+                    "Pi (π) Bonds": piBonds,
+                    "Total Bonds (σ + π)": totalBonds,
+                    "Fraction Csp3": csp3,
+                    "Molar Refractivity": mr
+                },
+                totalAtomsWithH: heavyAtoms + hCount,
+                atoms2d,
+                bonds2d,
+                xyz: xyzLines.join("\n")
+            };
+        }
+
+        // ============================================================
+        // 3. PROPERTY INTERPRETATION ENGINE (FROM App_fixed.py)
+        // ============================================================
+        function getPropertyInterpretation(propertyName, value) {
+            if (propertyName === "Molecular Formula") {
+                return "Shows the elemental composition of the molecule and is useful for understanding its basic chemical composition.";
+            }
+            if (propertyName === "Molecular Weight") {
+                return "Represents the average molecular mass. Molecular size and mass can influence diffusion, formulation and many physicochemical behaviours.";
+            }
+            if (propertyName === "Exact Molecular Weight") {
+                return "The monoisotopic mass calculated from exact isotopic masses; this is especially useful when comparing mass-spectrometry data.";
+            }
+            if (propertyName === "LogP") {
+                if (value < 0) return "A negative value indicates a preference toward the aqueous phase and relatively high hydrophilicity.";
+                if (value < 1) return "Indicates low to moderate lipophilicity, suggesting a reasonable preference for polar environments.";
+                if (value < 3) return "Indicates moderate lipophilicity, often reflecting a balance between hydrophilic and hydrophobic character.";
+                return "Indicates relatively high lipophilicity and a stronger preference for non-polar environments.";
+            }
+            if (propertyName === "TPSA") {
+                if (value < 60) return "A relatively low polar surface area, indicating limited overall molecular polarity.";
+                if (value < 140) return "A moderate polar surface area, reflecting the contribution of heteroatoms to molecular polarity.";
+                return "A high polar surface area, indicating substantial polarity and strong hydrogen-bonding potential.";
+            }
+            if (propertyName === "Hydrogen Bond Donors") {
+                return `The molecule has ${value} donor site(s) capable of donating hydrogen in hydrogen-bond interactions.`;
+            }
+            if (propertyName === "Hydrogen Bond Acceptors") {
+                return `The molecule has ${value} acceptor site(s) capable of accepting hydrogen in hydrogen-bond interactions.`;
+            }
+            if (propertyName === "Rotatable Bonds") {
+                if (value === 0) return "No freely rotatable bonds are detected, suggesting a relatively rigid molecular framework.";
+                return `${value} rotatable bond(s) indicate conformational flexibility in the molecular structure.`;
+            }
+            if (propertyName === "Ring Count") {
+                return `The molecule contains ${value} ring(s), which contribute to its overall shape and structural rigidity.`;
+            }
+            if (propertyName === "Aromatic Rings") {
+                return `${value} aromatic ring(s) contribute to aromaticity, planarity and delocalized π-electron character.`;
+            }
+            if (propertyName === "Aliphatic Rings") {
+                return `${value} non-aromatic ring(s) contribute to cyclic structure without aromatic π-electron delocalization.`;
+            }
+            if (propertyName === "Number of Atoms") {
+                return "Counts atom tokens recognized by the app's lightweight SMILES reader; implicit hydrogens are estimated separately.";
+            }
+            if (propertyName === "Heavy Atoms") {
+                return "Counts all non-hydrogen atoms and provides a useful measure of molecular structural size.";
+            }
+            if (propertyName === "Heavy Atom Bonds") {
+                return "Counts connections between non-hydrogen atoms in the molecular graph.";
+            }
+            if (propertyName === "Sigma (σ) Bonds") {
+                return "Every bonded atom pair contains one σ bond; this value includes bonds involving explicit or added hydrogens.";
+            }
+            if (propertyName === "Pi (π) Bonds") {
+                return "π bonds arise from multiple bonds and aromatic systems and are associated with electron delocalization.";
+            }
+            if (propertyName === "Total Bonds (σ + π)") {
+                return "Represents the total bond components obtained by adding the calculated σ and π bond counts.";
+            }
+            if (propertyName === "Fraction Csp3") {
+                if (value < 0.25) return "A low sp³ fraction suggests a comparatively planar, unsaturated or aromatic structural character.";
+                if (value < 0.60) return "An intermediate sp³ fraction indicates a balance between saturated and unsaturated structural features.";
+                return "A high sp³ fraction indicates a more saturated, three-dimensional molecular framework.";
+            }
+            if (propertyName === "Molar Refractivity") {
+                return "Relates to molecular volume and electronic polarizability and reflects how the electron cloud responds to an electric field.";
+            }
+            return "This descriptor provides additional quantitative information about the molecular structure and physicochemical behaviour.";
+        }
+
+        // ============================================================
+        // 4. 2D SCHEMATIC STRUCTURE RENDERER (CANVAS)
+        // ============================================================
+        function draw2DMoleculeOnCanvas(canvasId, molData) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || !molData) return;
+            const ctx = canvas.getContext("2d");
+            const W = canvas.width;
+            const H = canvas.height;
+
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, W, H);
+
+            const atoms = molData.atoms2d;
+            const bonds = molData.bonds2d;
+            if (!atoms || atoms.length === 0) return;
+
+            // Compute bounding box
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            atoms.forEach(a => {
+                if (a.x < minX) minX = a.x;
+                if (a.x > maxX) maxX = a.x;
+                if (a.y < minY) minY = a.y;
+                if (a.y > maxY) maxY = a.y;
+            });
+
+            const spanX = Math.max(maxX - minX, 2.2);
+            const spanY = Math.max(maxY - minY, 2.2);
+            const scale = Math.min((W - 110) / spanX, (H - 95) / spanY);
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+
+            function toScreen(pt) {
+                return {
+                    x: W / 2 + (pt.x - cx) * scale,
+                    y: H / 2 - (pt.y - cy) * scale
+                };
+            }
+
+            // Draw Bonds
+            ctx.lineCap = "round";
+            bonds.forEach(([i, j, order]) => {
+                const p1 = toScreen(atoms[i]);
+                const p2 = toScreen(atoms[j]);
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const nx = -dy / len;
+                const ny = dx / len;
+
+                ctx.strokeStyle = "#1e293b";
+                ctx.lineWidth = 2.6;
+
+                if (order === 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                } else if (order === 2) {
+                    const offset = 4.2;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x + nx * offset, p1.y + ny * offset);
+                    ctx.lineTo(p2.x + nx * offset, p2.y + ny * offset);
+                    ctx.moveTo(p1.x - nx * offset, p1.y - ny * offset);
+                    ctx.lineTo(p2.x - nx * offset, p2.y - ny * offset);
+                    ctx.stroke();
+                } else if (order === 3) {
+                    const offset = 5.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.moveTo(p1.x + nx * offset, p1.y + ny * offset);
+                    ctx.lineTo(p2.x + nx * offset, p2.y + ny * offset);
+                    ctx.moveTo(p1.x - nx * offset, p1.y - ny * offset);
+                    ctx.lineTo(p2.x - nx * offset, p2.y - ny * offset);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw Atom Labels (heteroatoms and terminal groups)
+            ctx.font = "bold 15px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            atoms.forEach(a => {
+                const p = toScreen(a);
+                if (a.label && a.label !== "C") {
+                    const textWidth = ctx.measureText(a.label).width;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(p.x - textWidth / 2 - 4, p.y - 10, textWidth + 8, 20);
+                    ctx.fillStyle = a.color || "#0f172a";
+                    ctx.fillText(a.label, p.x, p.y);
+                } else {
+                    // Subtle vertex joint
+                    ctx.fillStyle = "#1e293b";
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // ============================================================
+        // 5. 3DMOL.JS INTERACTIVE CONFORMER VIEWER
+        // ============================================================
+        let mainViewer3D = null;
+        let propViewer3D = null;
+
+        function apply3DStyle(viewer, styleName, showSurface, bgColor) {
+            viewer.setStyle({}, {});
+            viewer.removeAllSurfaces();
+
+            if (styleName === "Ball and Stick") {
+                viewer.setStyle({}, {
+                    stick: { radius: 0.15 },
+                    sphere: { scale: 0.30 }
+                });
+            } else if (styleName === "Stick") {
+                viewer.setStyle({}, {
+                    stick: { radius: 0.22 }
+                });
+            } else if (styleName === "Space Filling") {
+                viewer.setStyle({}, {
+                    sphere: { scale: 1.0 }
+                });
+            } else if (styleName === "Wireframe") {
+                viewer.setStyle({}, {
+                    line: { linewidth: 2.5 }
+                });
+            } else if (styleName === "Cartoon") {
+                viewer.setStyle({}, {
+                    stick: { radius: 0.12 },
+                    sphere: { scale: 0.20 }
+                });
+            }
+
+            if (showSurface) {
+                viewer.addSurface($3Dmol.SurfaceType.VDW, { opacity: 0.68, color: "white" });
+            }
+
+            viewer.setBackgroundColor(bgColor || "#0f172a");
+            viewer.zoomTo();
+            viewer.render();
+        }
+
+        function renderMain3DViewer() {
+            const container = document.getElementById("studio3dContainer");
+            if (!container || typeof $3Dmol === "undefined") return;
+
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            if (!molData) return;
+
+            if (!mainViewer3D) {
+                mainViewer3D = $3Dmol.createViewer(container, { backgroundColor: "#0f172a" });
+            }
+
+            const styleName = document.getElementById("studio3dStyle").value;
+            const bgColor = document.getElementById("studio3dBg").value;
+            const showSurface = document.getElementById("studio3dSurface").checked;
+
+            mainViewer3D.removeAllModels();
+            mainViewer3D.addModel(molData.xyz, "xyz");
+            apply3DStyle(mainViewer3D, styleName, showSurface, bgColor);
+            mainViewer3D.resize();
+        }
+
+        function resetMain3DZoom() {
+            if (mainViewer3D) {
+                mainViewer3D.zoomTo();
+                mainViewer3D.render();
+            }
+        }
+
+        function renderProp3DViewer() {
+            const container = document.getElementById("prop3dContainer");
+            if (!container || typeof $3Dmol === "undefined") return;
+            container.classList.remove("hidden");
+
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            if (!molData) return;
+
+            if (!propViewer3D) {
+                propViewer3D = $3Dmol.createViewer(container, { backgroundColor: "#0f172a" });
+            }
+
+            const styleName = document.getElementById("prop3dStyle").value;
+            const showSurface = document.getElementById("prop3dSurface").checked;
+
+            propViewer3D.removeAllModels();
+            propViewer3D.addModel(molData.xyz, "xyz");
+            apply3DStyle(propViewer3D, styleName, showSurface, "#0f172a");
+            propViewer3D.resize();
+        }
+
+        // ============================================================
+        // 6. SHARED STATE & NAVIGATION SYNCHRONIZATION
+        // ============================================================
+        const appState = {
+            currentPage: "overview",
+            activeSmiles: "CCO",
+            selectedPreset: "Ethanol",
+            studentName: "",
+            regNumber: ""
+        };
+
+        function createMetricTileHTML(label, value, subtitle = "") {
+            const subHtml = subtitle ? `<div class="metric-sub">${subtitle}</div>` : "";
+            return `
+                <div class="metric-tile">
+                    <div class="metric-label">${label}</div>
+                    <div class="metric-value">${value}</div>
+                    ${subHtml}
+                </div>
+            `;
+        }
+
+        function setActiveSmiles(newSmiles, presetName = null) {
+            appState.activeSmiles = newSmiles;
+            if (presetName) appState.selectedPreset = presetName;
+
+            // Sync all UI inputs & sidebar pill
+            document.getElementById("sidebarActiveSmilesPill").textContent = newSmiles || "None";
+            const studioInput = document.getElementById("studioSmilesInput");
+            const propInput = document.getElementById("propSmilesInput");
+            if (studioInput && studioInput.value !== newSmiles) studioInput.value = newSmiles;
+            if (propInput && propInput.value !== newSmiles) propInput.value = newSmiles;
+
+            if (presetName) {
+                document.getElementById("studioPresetSelect").value = presetName;
+                document.getElementById("propPresetSelect").value = presetName;
+            }
+
+            updateStudioView();
+            updatePropertiesView();
+        }
+
+        function loadPresetFromSelect(selectId) {
+            const presetName = document.getElementById(selectId).value;
+            const smiles = PRESET_MAP_BY_NAME[presetName];
+            if (smiles) {
+                setActiveSmiles(smiles, presetName);
+            }
+        }
+
+        function switchPage(pageKey) {
+            appState.currentPage = pageKey;
+
+            // Update sidebar active state
+            document.querySelectorAll("#navContainer .nav-item").forEach(item => {
+                if (item.getAttribute("data-page") === pageKey) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            });
+
+            // Toggle page visibility
+            document.querySelectorAll(".page-section").forEach(sec => sec.classList.add("hidden"));
+            const targetSec = document.getElementById(`page-${pageKey}`);
+            if (targetSec) targetSec.classList.remove("hidden");
+
+            // Hide mobile menu on navigation
+            const sidebar = document.getElementById("sidebar");
+            if (window.innerWidth < 768) {
+                sidebar.classList.add("hidden");
+            }
+
+            // Refresh page-specific canvases/viewers
+            if (pageKey === "studio") {
+                updateStudioView();
+                setTimeout(() => renderMain3DViewer(), 60);
+            } else if (pageKey === "properties") {
+                updatePropertiesView();
+            } else if (pageKey === "comparison") {
+                setTimeout(() => updateComparisonModule(), 50);
+            } else if (pageKey === "dossier") {
+                updateDossierPreview();
+            }
+        }
+
+        function switchTheoryTab(tabId) {
+            document.querySelectorAll(".theory-tab-content").forEach(el => el.classList.add("hidden"));
+            document.getElementById(tabId).classList.remove("hidden");
+
+            document.querySelectorAll(".theory-tab-btn").forEach(btn => {
+                btn.className = "theory-tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-600 hover:text-slate-900";
+            });
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "theory-tab-btn px-4 py-2.5 text-sm font-bold border-b-2 border-teal-600 text-teal-700 bg-teal-50/60 rounded-t-lg";
+            }
+        }
+
+        // ============================================================
+        // 7. STUDIO & PROPERTIES PAGE UPDATERS
+        // ============================================================
+        function updateStudioView() {
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            const errBanner = document.getElementById("studioErrorBanner");
+            const validContent = document.getElementById("studioValidContent");
+
+            if (!molData) {
+                errBanner.classList.remove("hidden");
+                validContent.classList.add("hidden");
+                return;
+            }
+
+            errBanner.classList.add("hidden");
+            validContent.classList.remove("hidden");
+
+            const p = molData.properties;
+            const kpiStrip = document.getElementById("studioKpiStrip");
+            kpiStrip.innerHTML = [
+                createMetricTileHTML("Formula", p["Molecular Formula"], "Elemental composition"),
+                createMetricTileHTML("Heavy Atoms", p["Heavy Atoms"], `${molData.totalAtomsWithH} total with H`),
+                createMetricTileHTML("Sigma (σ) Bonds", p["Sigma (σ) Bonds"], "Framework connections"),
+                createMetricTileHTML("Pi (π) Bonds", p["Pi (π) Bonds"], "Unsaturation / aromatic"),
+                createMetricTileHTML("Total Bonds", p["Total Bonds (σ + π)"], "Combined σ + π order")
+            ].join("");
+
+            document.getElementById("studioIdInputSmiles").textContent = appState.activeSmiles;
+            document.getElementById("studioIdCanonicalSmiles").textContent = molData.canonical;
+            document.getElementById("studioIdHeavyBonds").textContent = p["Heavy Atom Bonds"];
+
+            draw2DMoleculeOnCanvas("studio2dCanvas", molData);
+            if (appState.currentPage === "studio") {
+                renderMain3DViewer();
+            }
+        }
+
+        function updatePropertiesView() {
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            const errBanner = document.getElementById("propErrorBanner");
+            const validContent = document.getElementById("propValidContent");
+
+            if (!molData) {
+                errBanner.classList.remove("hidden");
+                validContent.classList.add("hidden");
+                return;
+            }
+
+            errBanner.classList.add("hidden");
+            validContent.classList.remove("hidden");
+
+            const p = molData.properties;
+            draw2DMoleculeOnCanvas("prop2dCanvas", molData);
+
+            // 8 Metric Tiles
+            const metricsGrid = document.getElementById("propMetricsGrid");
+            metricsGrid.innerHTML = [
+                createMetricTileHTML("Mol. Weight", p["Molecular Weight"], "g/mol"),
+                createMetricTileHTML("LogP", p["LogP"], "Lipophilicity"),
+                createMetricTileHTML("TPSA", p["TPSA"], "Å² Polar Surface"),
+                createMetricTileHTML("Molar Refract.", p["Molar Refractivity"], "Polarizability"),
+                createMetricTileHTML("H-Bond Donors", p["Hydrogen Bond Donors"], "OH / NH count"),
+                createMetricTileHTML("H-Bond Accept.", p["Hydrogen Bond Acceptors"], "O / N count"),
+                createMetricTileHTML("Rotatable Bonds", p["Rotatable Bonds"], "Flexibility"),
+                createMetricTileHTML("Fraction Csp³", p["Fraction Csp3"], "3D Saturation")
+            ].join("");
+
+            // Lipinski's Rule of 5
+            const checks = [
+                ["MW ≤ 500 g/mol", p["Molecular Weight"] <= 500],
+                ["LogP ≤ 5", p["LogP"] <= 5],
+                ["HBD ≤ 5", p["Hydrogen Bond Donors"] <= 5],
+                ["HBA ≤ 10", p["Hydrogen Bond Acceptors"] <= 10]
+            ];
+            const passedCount = checks.filter(c => c[1]).length;
+            const badgesHtml = checks.map(([lbl, ok]) => `${ok ? '✅' : '⚠️'} <b>${lbl}</b>`).join(" &nbsp;|&nbsp; ");
+            document.getElementById("lipinskiBanner").innerHTML = `
+                <div class="lab-card-title">💊 Lipinski's Rule of Five Screening (${passedCount}/4 Criteria Met)</div>
+                <div class="text-sm text-slate-900">${badgesHtml}</div>
+            `;
+
+            // Comprehensive 21-Row Table (2 SMILES + 19 Descriptors)
+            const tbody = document.getElementById("propTableBody");
+            const rows = [
+                ["Input SMILES", appState.activeSmiles, "Submitted line notation string"],
+                ["Canonical SMILES", molData.canonical, "Stored SMILES identifier for preset molecules; custom inputs are displayed as entered."]
+            ];
+            Object.entries(p).forEach(([key, val]) => {
+                rows.push([key, String(val), getPropertyInterpretation(key, val)]);
+            });
+
+            tbody.innerHTML = rows.map(([desc, val, interp]) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-4 font-semibold text-slate-800">${desc}</td>
+                    <td class="py-2.5 px-4 mono text-teal-700 font-semibold">${val}</td>
+                    <td class="py-2.5 px-4 text-slate-600">${interp}</td>
+                </tr>
+            `).join("");
+        }
+
+        // ============================================================
+        // 8. MULTI-MOLECULE COMPARISON CHART & MATRIX
+        // ============================================================
+        let comparisonChartInstance = null;
+
+        function getComparisonDataset() {
+            const rawText = document.getElementById("comparisonInput").value;
+            const rows = [];
+            rawText.split("\n").forEach(line => {
+                if (!line.includes(",")) return;
+                const [namePart, ...smilesParts] = line.split(",");
+                const smilesStr = smilesParts.join(",").trim();
+                const mol = parseAndCalculateMolecule(smilesStr);
+                if (mol) {
+                    const p = mol.properties;
+                    rows.push({
+                        Molecule: namePart.trim(),
+                        SMILES: smilesStr,
+                        Formula: p["Molecular Formula"],
+                        MW: p["Molecular Weight"],
+                        LogP: p["LogP"],
+                        TPSA: p["TPSA"],
+                        HBD: p["Hydrogen Bond Donors"],
+                        HBA: p["Hydrogen Bond Acceptors"],
+                        "Rotatable Bonds": p["Rotatable Bonds"],
+                        "Ring Count": p["Ring Count"],
+                        "Sigma Bonds": p["Sigma (σ) Bonds"],
+                        "Pi Bonds": p["Pi (π) Bonds"]
+                    });
+                }
+            });
+            return rows;
+        }
+
+        function updateComparisonModule() {
+            const rows = getComparisonDataset();
+            const tbody = document.getElementById("comparisonTableBody");
+            const metric = document.getElementById("comparisonMetricSelect").value;
+
+            tbody.innerHTML = rows.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3 font-bold text-slate-800">${r.Molecule}</td>
+                    <td class="py-2.5 px-3 mono text-teal-700">${r.Formula}</td>
+                    <td class="py-2.5 px-3 mono">${r.MW}</td>
+                    <td class="py-2.5 px-3 mono">${r.LogP}</td>
+                    <td class="py-2.5 px-3 mono">${r.TPSA}</td>
+                    <td class="py-2.5 px-3 mono">${r.HBD}</td>
+                    <td class="py-2.5 px-3 mono">${r.HBA}</td>
+                    <td class="py-2.5 px-3 mono">${r["Rotatable Bonds"]}</td>
+                    <td class="py-2.5 px-3 mono">${r["Ring Count"]}</td>
+                    <td class="py-2.5 px-3 mono">${r["Sigma Bonds"]}</td>
+                    <td class="py-2.5 px-3 mono">${r["Pi Bonds"]}</td>
+                </tr>
+            `).join("");
+
+            const ctx = document.getElementById("comparisonChartCanvas");
+            if (!ctx) return;
+
+            if (comparisonChartInstance) {
+                comparisonChartInstance.destroy();
+            }
+
+            comparisonChartInstance = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: rows.map(r => r.Molecule),
+                    datasets: [{
+                        label: `${metric} Across Selected Molecules`,
+                        data: rows.map(r => r[metric]),
+                        backgroundColor: "#0d9488",
+                        borderColor: "#0f172a",
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `${metric} Across Selected Molecules`,
+                            color: "#0f172a",
+                            font: { family: "Inter", size: 13, weight: "bold" }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { borderDash: [4, 4], color: "#e2e8f0" },
+                            title: { display: true, text: metric, font: { weight: "bold" } }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // 9. KNOWLEDGE ASSESSMENT MODULE (12 QUESTIONS)
+        // ============================================================
+        const QUIZ_QUESTIONS = [
+            { question: "What is the full form of SMILES?", options: ["Simplified Molecular Input Line Entry System", "Standard Molecular Information Language Encoding System", "Simple Molecular Identification and Labeling System"], answer: "Simplified Molecular Input Line Entry System" },
+            { question: "What does a SMILES string represent?", options: ["A molecular structure using text", "A spectroscopy technique", "A laboratory instrument"], answer: "A molecular structure using text" },
+            { question: "Which SMILES represents ethanol?", options: ["CCO", "c1ccccc1", "CC(=O)O"], answer: "CCO" },
+            { question: "Which SMILES represents benzene?", options: ["c1ccccc1", "CCO", "O=C=O"], answer: "c1ccccc1" },
+            { question: "In SMILES, parentheses are mainly used to indicate:", options: ["Branches", "Molecular weight", "Atom colour"], answer: "Branches" },
+            { question: "Which property is commonly associated with molecular lipophilicity?", options: ["LogP", "TPSA", "HBD"], answer: "LogP" },
+            { question: "What does TPSA describe?", options: ["Topological Polar Surface Area", "Total Pi Surface Area", "Thermal Property Surface Analysis"], answer: "Topological Polar Surface Area" },
+            { question: "What does HBA mean?", options: ["Hydrogen Bond Acceptor", "Heavy Bond Atom", "Hydrogen Bond Analysis"], answer: "Hydrogen Bond Acceptor" },
+            { question: "What does HBD mean?", options: ["Hydrogen Bond Donor", "Heavy Bond Descriptor", "Hydrogen Bond Distance"], answer: "Hydrogen Bond Donor" },
+            { question: "A double bond contains how many pi (π) bonds?", options: ["1", "2", "0"], answer: "1" },
+            { question: "A triple bond contains how many pi (π) bonds?", options: ["2", "1", "3"], answer: "2" },
+            { question: "Which model is useful for visualizing approximate molecular volume?", options: ["Space Filling", "Wireframe only", "Text SMILES"], answer: "Space Filling" }
+        ];
+
+        function initQuiz() {
+            const container = document.getElementById("quizContainer");
+            container.innerHTML = QUIZ_QUESTIONS.map((q, idx) => `
+                <div class="lab-card mb-0">
+                    <div class="font-bold text-slate-900 text-sm mb-2.5">Question ${idx + 1}: ${q.question}</div>
+                    <div class="space-y-2">
+                        ${q.options.map((opt, oIdx) => `
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs sm:text-sm text-slate-700">
+                                <input type="radio" name="quiz_q_${idx}" value="${opt}" onchange="updateQuizProgress()" class="accent-teal-600 w-4 h-4">
+                                <span>${opt}</span>
+                            </label>
+                        `).join("")}
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function updateQuizProgress() {
+            let answered = 0;
+            for (let i = 0; i < QUIZ_QUESTIONS.length; i++) {
+                if (document.querySelector(`input[name="quiz_q_${i}"]:checked`)) {
+                    answered++;
+                }
+            }
+            const pct = (answered / QUIZ_QUESTIONS.length) * 100;
+            document.getElementById("quizProgressBar").style.width = `${pct}%`;
+            document.getElementById("quizProgressText").textContent = `Progress: ${answered}/${QUIZ_QUESTIONS.length} questions answered`;
+        }
+
+        function resetQuiz() {
+            document.querySelectorAll('#quizContainer input[type="radio"]').forEach(r => r.checked = false);
+            updateQuizProgress();
+            document.getElementById("quizResultBox").classList.add("hidden");
+        }
+
+        function submitQuiz() {
+            const resultBox = document.getElementById("quizResultBox");
+            resultBox.classList.remove("hidden");
+
+            const answers = [];
+            for (let i = 0; i < QUIZ_QUESTIONS.length; i++) {
+                const checked = document.querySelector(`input[name="quiz_q_${i}"]:checked`);
+                if (!checked) {
+                    resultBox.innerHTML = `
+                        <div class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl text-sm font-medium">
+                            ⚠️ Please answer all 12 questions before submitting the assessment.
+                        </div>
+                    `;
+                    return;
+                }
+                answers.push(checked.value);
+            }
+
+            let score = 0;
+            QUIZ_QUESTIONS.forEach((q, i) => {
+                if (answers[i] === q.answer) score++;
+            });
+            const pct = (score / QUIZ_QUESTIONS.length) * 100;
+
+            let feedbackBanner = "";
+            if (pct >= 80) {
+                feedbackBanner = `<div class="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-xl text-sm font-bold">🎉 Outstanding performance! You have mastered the core cheminformatics concepts.</div>`;
+            } else if (pct >= 50) {
+                feedbackBanner = `<div class="bg-sky-50 border border-sky-300 text-sky-800 px-4 py-3 rounded-xl text-sm font-bold">👍 Good effort! Review the Theory tab to strengthen your understanding.</div>`;
+            } else {
+                feedbackBanner = `<div class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl text-sm font-bold">📚 Please review the Theory &amp; Concepts module and try again.</div>`;
+            }
+
+            resultBox.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    ${createMetricTileHTML("Final Score", `${score} / ${QUIZ_QUESTIONS.length}`, "Correctly answered items")}
+                    ${createMetricTileHTML("Accuracy Percentage", `${pct.toFixed(1)}%`, "Overall mastery")}
+                </div>
+                ${feedbackBanner}
+            `;
+        }
+
+        // ============================================================
+        // 10. FINAL DOSSIER PREVIEW & PDF / CSV EXPORT GENERATORS
+        // ============================================================
+        function loadAllPresetsIntoDossier() {
+            document.getElementById("dossierSmilesText").value = "CCO\nc1ccccc1\nCC(=O)Oc1ccccc1C(=O)O";
+            updateDossierPreview();
+        }
+
+        function getDossierRecords() {
+            const rawLines = document.getElementById("dossierSmilesText").value.split("\n");
+            const validRecords = [];
+            const invalidSmiles = [];
+
+            rawLines.forEach(line => {
+                const s = line.trim();
+                if (!s) return;
+                const mol = parseAndCalculateMolecule(s);
+                if (!mol) {
+                    invalidSmiles.push(s);
+                } else {
+                    validRecords.push({ inputSmiles: s, mol });
+                }
+            });
+            return { validRecords, invalidSmiles };
+        }
+
+        function updateDossierPreview() {
+            const { validRecords, invalidSmiles } = getDossierRecords();
+            const warnBanner = document.getElementById("dossierWarningBanner");
+            const validSection = document.getElementById("dossierValidSection");
+            const successBanner = document.getElementById("dossierSuccessBanner");
+            const previewBody = document.getElementById("dossierPreviewBody");
+
+            if (invalidSmiles.length > 0) {
+                warnBanner.classList.remove("hidden");
+                warnBanner.textContent = "⚠️ The following SMILES could not be parsed and will be excluded: " + invalidSmiles.join(", ");
+            } else {
+                warnBanner.classList.add("hidden");
+            }
+
+            if (validRecords.length === 0) {
+                validSection.classList.add("hidden");
+                return;
+            }
+
+            validSection.classList.remove("hidden");
+            successBanner.textContent = `✅ ${validRecords.length} valid molecule(s) verified and ready for PDF compilation.`;
+
+            previewBody.innerHTML = validRecords.map((rec, idx) => {
+                const p = rec.mol.properties;
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-4 font-bold">${idx + 1}</td>
+                        <td class="py-2.5 px-4 mono text-teal-700">${rec.inputSmiles}</td>
+                        <td class="py-2.5 px-4 mono text-slate-700">${rec.mol.canonical}</td>
+                        <td class="py-2.5 px-4 font-semibold">${p["Molecular Formula"]}</td>
+                        <td class="py-2.5 px-4 mono">${p["Molecular Weight"]}</td>
+                        <td class="py-2.5 px-4 mono">${p["LogP"]}</td>
+                        <td class="py-2.5 px-4 mono">${p["TPSA"]}</td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // CSV Exports
+        function downloadPropertiesCSV() {
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            if (!molData) return;
+
+            const rows = [
+                ["Descriptor / Property", "Calculated Value", "Chemical Interpretation"],
+                ["Input SMILES", appState.activeSmiles, "Submitted line notation string"],
+                ["Canonical SMILES", molData.canonical, "Stored SMILES identifier for preset molecules; custom inputs are displayed as entered."]
+            ];
+
+            Object.entries(molData.properties).forEach(([k, v]) => {
+                rows.push([k, String(v), getPropertyInterpretation(k, v)]);
+            });
+
+            const csvContent = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+            triggerFileDownload(csvContent, "Molecular_Properties_Report.csv", "text/csv;charset=utf-8;");
+        }
+
+        function downloadComparisonCSV() {
+            const rows = getComparisonDataset();
+            if (!rows.length) return;
+            const headers = ["Molecule", "Formula", "MW", "LogP", "TPSA", "HBD", "HBA", "Rotatable Bonds", "Ring Count", "Sigma Bonds", "Pi Bonds"];
+            const csvLines = [
+                headers.join(","),
+                ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
+            ];
+            triggerFileDownload(csvLines.join("\n"), "structure_property_comparison.csv", "text/csv;charset=utf-8;");
+        }
+
+        function triggerFileDownload(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // PDF Report Exports using jsPDF & autoTable
+        function downloadSingleMoleculePDF() {
+            const molData = parseAndCalculateMolecule(appState.activeSmiles);
+            if (!molData || !window.jspdf) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const p = molData.properties;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.setTextColor(15, 118, 110);
+            doc.text("MOLECULAR PROPERTIES REPORT", 105, 18, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(71, 85, 105);
+            doc.text("Cheminformatics Virtual Laboratory | Authored by KOLAN MAASIRI REDDY & SEEMA E", 105, 24, { align: "center" });
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.setTextColor(15, 23, 42);
+            doc.text("1. Molecular Information", 14, 34);
+
+            doc.autoTable({
+                startY: 37,
+                head: [["Property", "Value"]],
+                body: [
+                    ["Input SMILES", appState.activeSmiles],
+                    ["Canonical SMILES", molData.canonical],
+                    ["Molecular Formula", p["Molecular Formula"]]
+                ],
+                headStyles: { fillColor: [15, 23, 42] },
+                styles: { fontSize: 9 }
+            });
+
+            const nextY = doc.lastAutoTable.finalY + 10;
+            doc.text("2. Molecular Properties", 14, nextY);
+
+            const propRows = Object.entries(p).map(([k, v]) => [
+                k.replace("σ", "sigma").replace("π", "pi"),
+                String(v)
+            ]);
+
+            doc.autoTable({
+                startY: nextY + 3,
+                head: [["Property", "Value"]],
+                body: propRows,
+                headStyles: { fillColor: [13, 148, 136] },
+                styles: { fontSize: 8.5 }
+            });
+
+            doc.save("Molecular_Properties_Report.pdf");
+        }
+
+        function compileCompleteDossierPDF() {
+            const { validRecords } = getDossierRecords();
+            if (!validRecords.length || !window.jspdf) return;
+
+            const studentName = document.getElementById("dossierStudentName").value || "Not provided";
+            const regNum = document.getElementById("dossierRegNumber").value || "Not provided";
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            validRecords.forEach((rec, index) => {
+                if (index > 0) doc.addPage();
+                const p = rec.mol.properties;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.setTextColor(15, 118, 110);
+                doc.text("CHEMINFORMATICS VIRTUAL LABORATORY", 105, 16, { align: "center" });
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+                doc.setTextColor(71, 85, 105);
+                doc.text("Authored by KOLAN MAASIRI REDDY & SEEMA E | SRM Institute of Science and Technology", 105, 22, { align: "center" });
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.setTextColor(15, 23, 42);
+                doc.text(`FINAL STUDENT MOLECULAR ANALYSIS REPORT (Molecule ${index + 1} of ${validRecords.length})`, 14, 31);
+
+                doc.autoTable({
+                    startY: 34,
+                    body: [
+                        ["Student Name", studentName],
+                        ["Registration Number", regNum],
+                        ["Input SMILES", rec.inputSmiles],
+                        ["Canonical SMILES", rec.mol.canonical],
+                        ["Molecular Formula", p["Molecular Formula"]]
+                    ],
+                    columnStyles: { 0: { fillColor: [240, 253, 250], fontStyle: "bold", cellWidth: 50 } },
+                    styles: { fontSize: 8.5 }
+                });
+
+                const propRows = Object.entries(p).map(([k, v]) => [
+                    k.replace("σ", "sigma").replace("π", "pi"),
+                    String(v),
+                    getPropertyInterpretation(k, v).replace(/σ/g, "sigma").replace(/π/g, "pi").replace(/³|²/g, "")
+                ]);
+
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 6,
+                    head: [["Property", "Value", "Interpretation"]],
+                    body: propRows,
+                    headStyles: { fillColor: [13, 148, 136] },
+                    columnStyles: {
+                        0: { cellWidth: 42, fontStyle: "bold" },
+                        1: { cellWidth: 24 },
+                        2: { cellWidth: 116 }
+                    },
+                    styles: { fontSize: 7.5 }
+                });
+            });
+
+            doc.save("Cheminformatics_Molecular_Analysis_Report.pdf");
+        }
+
+        // ============================================================
+        // 11. INITIALIZATION ON WINDOW LOAD
+        // ============================================================
+        window.onload = function () {
+            // Populate Overview Quick-Launch Reference Table
+            const refBody = document.getElementById("referenceTableBody");
+            const presetsList = [
+                ["Ethanol", "Primary Alcohol", "CCO"],
+                ["Benzene", "Aromatic Hydrocarbon", "c1ccccc1"],
+                ["Phenol", "Aromatic Alcohol", "Oc1ccccc1"],
+                ["Acetic Acid", "Carboxylic Acid", "CC(=O)O"],
+                ["Aspirin", "Salicylate Analgesic", "CC(=O)Oc1ccccc1C(=O)O"],
+                ["Caffeine", "Xanthine Alkaloid", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"]
+            ];
+
+            refBody.innerHTML = presetsList.map(([name, cls, smi]) => `
+                <tr class="hover:bg-teal-50/50 cursor-pointer transition" onclick="setActiveSmiles('${smi}', '${name}'); switchPage('studio');">
+                    <td class="py-3 px-4 font-bold text-slate-900">${name}</td>
+                    <td class="py-3 px-4 text-slate-600">${cls}</td>
+                    <td class="py-3 px-4 mono text-teal-700 font-semibold">${smi}</td>
+                    <td class="py-3 px-4 text-right">
+                        <span class="inline-block px-2.5 py-1 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-xs font-bold">
+                            Launch Studio →
+                        </span>
+                    </td>
+                </tr>
+            `).join("");
+
+            // Sidebar Navigation Listeners
+            document.querySelectorAll("#navContainer .nav-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    switchPage(item.getAttribute("data-page"));
+                });
+            });
+
+            // Mobile Menu Toggle
+            document.getElementById("mobileMenuBtn").addEventListener("click", () => {
+                const sb = document.getElementById("sidebar");
+                sb.classList.toggle("hidden");
+            });
+
+            // Sync Researcher Profile inputs between Sidebar & Dossier page
+            const sbName = document.getElementById("sidebarStudentName");
+            const sbReg = document.getElementById("sidebarRegNumber");
+            const dsName = document.getElementById("dossierStudentName");
+            const dsReg = document.getElementById("dossierRegNumber");
+
+            sbName.addEventListener("input", () => { dsName.value = sbName.value; });
+            dsName.addEventListener("input", () => { sbName.value = dsName.value; });
+            sbReg.addEventListener("input", () => { dsReg.value = sbReg.value; });
+            dsReg.addEventListener("input", () => { sbReg.value = dsReg.value; });
+
+            // Sync SMILES text inputs live
+            document.getElementById("studioSmilesInput").addEventListener("input", (e) => {
+                setActiveSmiles(e.target.value);
+            });
+            document.getElementById("propSmilesInput").addEventListener("input", (e) => {
+                setActiveSmiles(e.target.value);
+            });
+
+            // Initialize views
+            initQuiz();
+            updateStudioView();
+            updatePropertiesView();
+            updateDossierPreview();
+        };
+    </script>
+</body>
+</html>
